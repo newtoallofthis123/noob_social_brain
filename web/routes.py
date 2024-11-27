@@ -30,36 +30,34 @@ def tag():
     post = db.fetch_content_by_id(post_id)
     if post is None:
         return jsonify({'status': 'error', 'message': 'Post not found'}), 404
-    tag_ids = db.get_tag_for_post_id(post_id)
+    tag_ids = db.get_tags_for_post(post_id)
     if tag_ids is not None:
         db_tags = db.fetch_tags()
         tags = []
         for tag_id in tag_ids:
             for db_tag in db_tags:
                 if db_tag[0] == tag_id:
-                    tags.append(db_tag[1])
+                    tags.append(db_tag)
         return jsonify({'status': 'ok', 'tags': tags})
     tags = classify_tags(post[1], db.fetch_tags())
 
     for tag in tags:
         db.add_tag(post[0], tag[0])
 
-    return jsonify({'status': 'ok', 'tags': [tag[1] for tag in tags]})
+    return jsonify({'status': 'ok', 'tags': tags})
 
 
-@api.route('/get_tags/<post_id>', methods=['GET'])
-def get_tags(post_id):
-    tag_ids = db.get_tag_for_post_id(post_id)
-    if tag_ids is None:
-        return jsonify([])
-    res = []
-    tags = db.fetch_tags()
+@api.route('/get_tags', methods=['GET'])
+def get_tags():
+    return jsonify(db.fetch_tags())
 
-    for tag_id in tag_ids:
-        for tag in tags:
-            if tag[0] == tag_id:
-                res.append(tag[1])
-
-    return jsonify(res)
+@api.route('/posts_of_tag', methods=['POST'])
+def posts_of_tag():
+    if not request.is_json:
+        return jsonify({'status': 'error', 'message': 'Request must be JSON'}), 400
+    json = request.get_json()
+    tag_id = json['tag_id']
+    posts = db.fetch_posts_of_tag(tag_id)
+    return jsonify(posts)
 
 app.register_blueprint(api)

@@ -79,7 +79,7 @@ class NoobSocialDB:
         cursor.close()
 
 
-    def get_tag_for_post_id(self, post_id):
+    def get_tags_for_post(self, post_id):
         tags = []
         cursor = self.engine.cursor()
         cursor.execute("SELECT * FROM posts WHERE id = %s", (post_id,))
@@ -98,3 +98,20 @@ class NoobSocialDB:
         cursor.close()
 
         return tags
+
+    def fetch_posts_of_tag(self, tag_id):
+        posts = []
+        cursor = self.engine.cursor()
+        cursor.execute("SELECT * FROM content_tags WHERE tag_id = %s", (tag_id,))
+        rows = cursor.fetchall()
+
+        for row in rows:
+            cursor.execute("SELECT * FROM contents INNER JOIN posts ON contents.id = posts.content WHERE contents.id = %s", (row[1],))
+            post = cursor.fetchone()
+            if post is not None:
+                print(post)
+                posts.append((post[0], post[1], post[2]))
+
+        cursor.close()
+
+        return posts
