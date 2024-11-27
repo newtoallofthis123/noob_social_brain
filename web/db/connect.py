@@ -1,3 +1,4 @@
+import uuid
 import psycopg
 
 
@@ -73,6 +74,27 @@ class NoobSocialDB:
 
     def add_tag(self, content_id, tag_id):
         cursor = self.engine.cursor()
-        cursor.execute("INSERT INTO content_tags (content_id, tag_id, created_at) VALUES (%s, %s, NOW())", (content_id, tag_id))
+        cursor.execute("INSERT INTO content_tags (id, content_id, tag_id, created_at) VALUES (%s, %s, %s, NOW())", (uuid.uuid4(), content_id, tag_id))
         self.engine.commit()
         cursor.close()
+
+
+    def get_tag_for_post_id(self, post_id):
+        tags = []
+        cursor = self.engine.cursor()
+        cursor.execute("SELECT * FROM posts WHERE id = %s", (post_id,))
+        row = cursor.fetchone()
+
+        if row is None:
+            return None
+
+        content_id = row[2]
+        cursor.execute("SELECT tag_id from content_tags where content_id = %s", (content_id,))
+        rows = cursor.fetchall()
+
+        for row in rows:
+            tags.append(row[0])
+
+        cursor.close()
+
+        return tags
